@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>现代视频播放器</title>
+  
+  <!-- 引入外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3B82F6', // 主色调：蓝色
+            secondary: '#10B981', // 辅助色：绿色
+            dark: '#1E293B', // 深色背景
+            light: '#F8FAFC' // 浅色文本
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <!-- 自定义工具类 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .player-shadow {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      }
+      .control-hover {
+        @apply transition-all duration-300 hover:scale-110 hover:bg-primary/90;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-inter min-h-screen flex flex-col">
+  <!-- 顶部导航 -->
+  <header class="bg-dark text-white py-4 px-6 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold flex items-center">
+        <i class="fa fa-play-circle mr-2 text-primary"></i>
+        <span>视频播放器</span>
+      </h1>
+      <div class="hidden md:flex items-center space-x-4">
+        <button class="text-gray-300 hover:text-white transition-colors">
+          <i class="fa fa-history"></i>
+          <span class="ml-1">历史</span>
+        </button>
+        <button class="text-gray-300 hover:text-white transition-colors">
+          <i class="fa fa-cog"></i>
+          <span class="ml-1">设置</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <div class="max-w-5xl mx-auto">
+      <!-- 视频选择器 -->
+      <div class="mb-6 bg-white rounded-lg p-4 shadow-md">
+        <h2 class="text-xl font-semibold mb-3 text-gray-800">选择视频</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button id="video1" class="video-option bg-gray-100 hover:bg-primary/10 p-4 rounded-lg border-2 border-primary cursor-pointer transition-all duration-300 flex items-center">
+            <i class="fa fa-film text-primary text-2xl mr-3"></i>
+            <div>
+              <h3 class="font-medium">视频 1</h3>
+              <p class="text-sm text-gray-500">点击播放第一个视频</p>
+            </div>
+          </button>
+          <button id="video2" class="video-option bg-gray-100 hover:bg-primary/10 p-4 rounded-lg border-2 border-transparent cursor-pointer transition-all duration-300 flex items-center">
+            <i class="fa fa-film text-gray-400 text-2xl mr-3"></i>
+            <div>
+              <h3 class="font-medium">视频 2</h3>
+              <p class="text-sm text-gray-500">点击播放第二个视频</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 播放器容器 -->
+      <div class="relative bg-dark rounded-xl overflow-hidden player-shadow aspect-video max-w-full">
+        <!-- 视频元素 -->
+        <video id="videoPlayer" class="w-full h-full object-contain" poster="https://picsum.photos/1280/720?grayscale">
+          <source src="http://szkoyeghw.hd-bkt.clouddn.com/221.mp4" type="video/mp4">
+          您的浏览器不支持HTML5视频播放。
+        </video>
+
+        <!-- 自定义播放按钮（大） -->
+        <div id="bigPlayButton" class="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-300">
+          <div class="w-20 h-20 md:w-24 md:h-24 bg-primary rounded-full flex items-center justify-center control-hover">
+            <i class="fa fa-play text-white text-3xl md:text-4xl ml-2"></i>
+          </div>
+        </div>
+
+        <!-- 加载指示器 -->
+        <div id="loader" class="absolute inset-0 flex items-center justify-center bg-black/30 hidden">
+          <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+
+        <!-- 顶部控制栏 -->
+        <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+          <div class="text-white font-medium">视频播放中</div>
+          <div class="flex space-x-3">
+            <button id="pipButton" class="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white control-hover">
+              <i class="fa fa-clone"></i>
+            </button>
+            <button id="airplayButton" class="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white control-hover hidden md:flex">
+              <i class="fa fa-tv"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 底部控制栏 -->
+        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+          <!-- 进度条 -->
+          <div class="relative h-1 bg-gray-500 rounded-full mb-4 cursor-pointer group" id="progressBar">
+            <div id="progressFilled" class="absolute top-0 left-0 h-full bg-primary rounded-full" style="width: 0%"></div>
+            <div class="absolute top-1/2 left-0 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity" id="progressHandle"></div>
+          </div>
+
+          <!-- 控制按钮 -->
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+              <button id="playPauseButton" class="text-white control-hover">
+                <i class="fa fa-play text-xl"></i>
+              </button>
+              
+              <!-- 音量控制 -->
+              <div class="hidden md:flex items-center space-x-2">
+                <button id="muteButton" class="text-white control-hover">
+                  <i class="fa fa-volume-up text-lg"></i>
+                </button>
+                <div class="w-24 h-1 bg-gray-500 rounded-full relative cursor-pointer" id="volumeBar">
+                  <div id="volumeFilled" class="absolute top-0 left-0 h-full bg-white rounded-full" style="width: 80%"></div>
+                </div>
+              </div>
+              
+              <!-- 时间显示 -->
+              <div class="text-white text-sm">
+                <span id="currentTime">0:00</span>
+                <span class="mx-1">/</span>
+                <span id="duration">0:00</span>
+              </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+              <!-- 播放速度 -->
+              <div class="hidden md:block relative group">
+                <button id="speedButton" class="text-white control-hover text-sm px-2 py-1 rounded bg-black/30">
+                  1.0x
+                </button>
+                <div class="absolute bottom-full right-0 mb-2 bg-dark rounded-lg shadow-lg p-2 w-24 hidden group-hover:block z-10">
+                  <div class="speed-option cursor-pointer hover:bg-primary/20 px-2 py-1 rounded text-sm text-white" data-speed="0.5">0.5x</div>
+                  <div class="speed-option cursor-pointer hover:bg-primary/20 px-2 py-1 rounded text-sm text-white" data-speed="1.0">1.0x</div>
+                  <div class="speed-option cursor-pointer hover:bg-primary/20 px-2 py-1 rounded text-sm text-white" data-speed="1.5">1.5x</div>
+                  <div class="speed-option cursor-pointer hover:bg-primary/20 px-2 py-1 rounded text-sm text-white" data-speed="2.0">2.0x</div>
+                </div>
+              </div>
+              
+              <!-- 全屏按钮 -->
+              <button id="fullscreenButton" class="text-white control-hover">
+                <i class="fa fa-expand text-xl"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视频信息 -->
+      <div class="mt-6 bg-white rounded-lg p-6 shadow-md">
+        <h2 class="text-2xl font-bold mb-3 text-gray-800" id="videoTitle">视频 1 信息</h2>
+        <p class="text-gray-600 mb-4" id="videoDescription">
+          这是第一个视频的描述信息。点击播放按钮开始观看视频内容。支持播放控制、进度调整、音量调节和全屏等功能。
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">视频</span>
+          <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">播放</span>
+          <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">媒体</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-dark text-white py-6 px-6 mt-12">
+    <div class="container mx-auto text-center">
+      <p>&copy; 2023 视频播放器 | 一个现代化的HTML5视频播放解决方案</p>
+      <div class="flex justify-center space-x-4 mt-3">
+        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fa fa-github text-xl"></i></a>
+        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fa fa-twitter text-xl"></i></a>
+        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fa fa-linkedin text-xl"></i></a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 获取DOM元素
+    const videoPlayer = document.getElementById('videoPlayer');
+    const bigPlayButton = document.getElementById('bigPlayButton');
+    const playPauseButton = document.getElementById('playPauseButton');
+    const progressBar = document.getElementById('progressBar');
+    const progressFilled = document.getElementById('progressFilled');
+    const progressHandle = document.getElementById('progressHandle');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+    const muteButton = document.getElementById('muteButton');
+    const volumeBar = document.getElementById('volumeBar');
+    const volumeFilled = document.getElementById('volumeFilled');
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    const speedButton = document.getElementById('speedButton');
+    const speedOptions = document.querySelectorAll('.speed-option');
+    const pipButton = document.getElementById('pipButton');
+    const airplayButton = document.getElementById('airplayButton');
+    const loader = document.getElementById('loader');
+    const video1Btn = document.getElementById('video1');
+    const video2Btn = document.getElementById('video2');
+    const videoTitle = document.getElementById('videoTitle');
+    const videoDescription = document.getElementById('videoDescription');
+    
+    // 视频源
+    const videoSources = {
+      video1: {
+        url: 'http://szkoyeghw.hd-bkt.clouddn.com/221.mp4',
+        title: '视频 1 信息',
+        description: '这是第一个视频的描述信息。点击播放按钮开始观看视频内容。支持播放控制、进度调整、音量调节和全屏等功能。'
+      },
+      video2: {
+        url: 'http://szkoyeghw.hd-bkt.clouddn.com/222.mp4',
+        title: '视频 2 信息',
+        description: '这是第二个视频的描述信息。点击播放按钮开始观看视频内容。支持播放控制、进度调整、音量调节和全屏等功能。'
+      }
+    };
+    
+    // 格式化时间（秒 -> MM:SS）
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return '0:00';
+      const minutes = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${minutes}:${secs < 10 ? '0' + secs : secs}`;
+    }
+    
+    // 更新进度条
+    function updateProgress() {
+      const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+      progressFilled.style.width = `${percent}%`;
+      progressHandle.style.left = `${percent}%`;
+      currentTimeEl.textContent = formatTime(videoPlayer.currentTime);
+    }
+    
+    // 更新持续时间
+    function updateDuration() {
+      durationEl.textContent = formatTime(videoPlayer.duration);
+    }
+    
+    // 更新音量条
+    function updateVolume() {
+      const volume = videoPlayer.volume;
+      volumeFilled.style.width = `${volume * 100}%`;
+      
+      // 更新音量图标
+      if (videoPlayer.muted || volume === 0) {
+        muteButton.innerHTML = '<i class="fa fa-volume-off text-lg"></i>';
+      } else if (volume < 0.5) {
+        muteButton.innerHTML = '<i class="fa fa-volume-down text-lg"></i>';
+      } else {
+        muteButton.innerHTML = '<i class="fa fa-volume-up text-lg"></i>';
+      }
+    }
+    
+    // 切换播放/暂停
+    function togglePlay() {
+      if (videoPlayer.paused || videoPlayer.ended) {
+        videoPlayer.play()
+          .then(() => {
+            playPauseButton.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+            bigPlayButton.style.opacity = '0';
+          })
+          .catch(error => {
+            console.error('播放失败:', error);
+            alert('视频播放失败，请检查网络连接或稍后再试。');
+          });
+      } else {
+        videoPlayer.pause();
+        playPauseButton.innerHTML = '<i class="fa fa-play text-xl"></i>';
+        bigPlayButton.style.opacity = '1';
+      }
+    }
+    
+    // 切换静音
+    function toggleMute() {
+      videoPlayer.muted = !videoPlayer.muted;
+      updateVolume();
+    }
+    
+    // 设置音量
+    function setVolume(e) {
+      const volume = e.offsetX / volumeBar.offsetWidth;
+      videoPlayer.volume = volume;
+      videoPlayer.muted = volume === 0;
+      updateVolume();
+    }
+    
+    // 跳转到指定进度
+    function scrub(e) {
+      const scrubTime = (e.offsetX / progressBar.offsetWidth) * videoPlayer.duration;
+      videoPlayer.currentTime = scrubTime;
+    }
+    
+    // 切换全屏
+    function toggleFullscreen() {
+      const playerContainer = videoPlayer.parentElement;
+      
+      if (!document.fullscreenElement) {
+        playerContainer.requestFullscreen().catch(err => {
+          console.error(`全屏切换错误: ${err.message}`);
+        });
+        fullscreenButton.innerHTML = '<i class="fa fa-compress text-xl"></i>';
+      } else {
+        document.exitFullscreen();
+        fullscreenButton.innerHTML = '<i class="fa fa-expand text-xl"></i>';
+      }
+    }
+    
+    // 设置播放速度
+    function setPlaybackSpeed(speed) {
+      videoPlayer.playbackRate = speed;
+      speedButton.textContent = `${speed}x`;
+    }
+    
+    // 切换画中画模式
+    function togglePictureInPicture() {
+      if (document.pictureInPictureElement) {
+        document.exitPictureInPicture();
+      } else if (document.pictureInPictureEnabled) {
+        videoPlayer.requestPictureInPicture();
+      }
+    }
+    
+    // 切换AirPlay
+    function toggleAirPlay() {
+      if (videoPlayer.webkitShowPlaybackTargetPicker) {
+        videoPlayer.webkitShowPlaybackTargetPicker();
+      }
+    }
+    
+    // 切换视频源
+    function switchVideo(videoId) {
+      // 显示加载指示器
+      loader.classList.remove('hidden');
+      
+      // 更新视频源
+      videoPlayer.src = videoSources[videoId].url;
+      videoTitle.textContent = videoSources[videoId].title;
+      videoDescription.textContent = videoSources[videoId].description;
+      
+      // 更新按钮样式
+      video1Btn.classList.toggle('border-primary', videoId === 'video1');
+      video1Btn.classList.toggle('border-transparent', videoId !== 'video1');
+      video1Btn.querySelector('i').classList.toggle('text-primary', videoId === 'video1');
+      video1Btn.querySelector('i').classList.toggle('text-gray-400', videoId !== 'video1');
+      
+      video2Btn.classList.toggle('border-primary', videoId === 'video2');
+      video2Btn.classList.toggle('border-transparent', videoId !== 'video2');
+      video2Btn.querySelector('i').classList.toggle('text-primary', videoId === 'video2');
+      video2Btn.querySelector('i').classList.toggle('text-gray-400', videoId !== 'video2');
+      
+      // 尝试播放新视频
+      videoPlayer.load();
+      videoPlayer.play()
+        .then(() => {
+          playPauseButton.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+          bigPlayButton.style.opacity = '0';
+          loader.classList.add('hidden');
+        })
+        .catch(error => {
+          console.error('切换视频失败:', error);
+          alert('切换视频失败，请检查网络连接或稍后再试。');
+          loader.classList.add('hidden');
+        });
+    }
+    
+    // 事件监听
+    videoPlayer.addEventListener('timeupdate', updateProgress);
+    videoPlayer.addEventListener('loadedmetadata', updateDuration);
+    videoPlayer.addEventListener('volumechange', updateVolume);
+    videoPlayer.addEventListener('play', () => {
+      playPauseButton.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+      bigPlayButton.style.opacity = '0';
+    });
+    videoPlayer.addEventListener('pause', () => {
+      playPauseButton.innerHTML = '<i class="fa fa-play text-xl"></i>';
+      bigPlayButton.style.opacity = '1';
+    });
+    videoPlayer.addEventListener('waiting', () => {
+      loader.classList.remove('hidden');
+    });
+    videoPlayer.addEventListener('playing', () => {
+      loader.classList.add('hidden');
+    });
+    videoPlayer.addEventListener('ended', () => {
+      bigPlayButton.style.opacity = '1';
+      playPauseButton.innerHTML = '<i class="fa fa-play text-xl"></i>';
+    });
+    
+    bigPlayButton.addEventListener('click', togglePlay);
+    playPauseButton.addEventListener('click', togglePlay);
+    
+    progressBar.addEventListener('click', scrub);
+    
+    // 进度条拖拽
+    let isDragging = false;
+    progressBar.addEventListener('mousedown', () => isDragging = true);
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const rect = progressBar.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const scrubTime = (offsetX / rect.width) * videoPlayer.duration;
+        videoPlayer.currentTime = scrubTime;
+      }
+    });
+    document.addEventListener('mouseup', () => isDragging = false);
+    
+    muteButton.addEventListener('click', toggleMute);
+    volumeBar.addEventListener('click', setVolume);
+    
+    fullscreenButton.addEventListener('click', toggleFullscreen);
+    
+    // 监听全屏状态变化
+    document.addEventListener('fullscreenchange', () => {
+      if (document.fullscreenElement) {
+        fullscreenButton.innerHTML = '<i class="fa fa-compress text-xl"></i>';
+      } else {
+        fullscreenButton.innerHTML = '<i class="fa fa-expand text-xl"></i>';
+      }
+    });
+    
+    // 播放速度选择
+    speedOptions.forEach(option => {
+      option.addEventListener('click', (e) => {
+        const speed = parseFloat(e.target.dataset.speed);
+        setPlaybackSpeed(speed);
+      });
+    });
+    
+    // 画中画模式
+    pipButton.addEventListener('click', togglePictureInPicture);
+    
+    // AirPlay
+    airplayButton.addEventListener('click', toggleAirPlay);
+    
+    // 视频切换
+    video1Btn.addEventListener('click', () => switchVideo('video1'));
+    video2Btn.addEventListener('click', () => switchVideo('video2'));
+    
+    // 移动端触摸控制
+    videoPlayer.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      togglePlay();
+    }, { passive: false });
+    
+    // 初始化
+    updateVolume();
+    videoPlayer.volume = 0.8; // 默认音量
+  </script>
+</body>
+</html>
