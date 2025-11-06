@@ -329,8 +329,6 @@
       video1Btn.className = 'video-selector bg-white text-dark px-5 py-2 rounded-full text-sm md:text-base btn-hover shadow flex items-center';
       video2Btn.className = 'video-selector bg-white text-dark px-5 py-2 rounded-full text-sm md:text-base btn-hover shadow flex items-center';
       video3Btn.className = 'video-selector bg-white text-dark px-5 py-2 rounded-full text-sm md:text-base btn-hover shadow flex items-center';
-	    video4Btn.className = 'video-selector bg-white text-dark px-5 py-2 rounded-full text-sm md:text-base btn-hover shadow flex items-center';
-	    video5Btn.className = 'video-selector bg-white text-dark px-5 py-2 rounded-full text-sm md:text-base btn-hover shadow flex items-center';
       document.getElementById(sourceId).className = 'video-selector bg-primary text-white px-5 py-2 rounded-full text-sm md:text-base btn-hover flex items-center';
       
       // 更改视频源
@@ -393,8 +391,6 @@
     video1Btn.addEventListener('click', () => changeVideoSource('video1'));
     video2Btn.addEventListener('click', () => changeVideoSource('video2'));
     video3Btn.addEventListener('click', () => changeVideoSource('video3'));
-    video4Btn.addEventListener('click', () => changeVideoSource('video4'));
-    video5Btn.addEventListener('click', () => changeVideoSource('video5'));
     // 视频可播放时隐藏加载指示器
     videoPlayer.addEventListener('canplay', () => {
       loader.classList.add('hidden');
