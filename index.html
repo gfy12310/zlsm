@@ -136,7 +136,7 @@
       <!-- 视频容器 -->
       <div class="video-container bg-black">
         <video id="videoPlayer" class="w-full h-full" poster="https://picsum.photos/1280/720?grayscale&amp;blur=2" preload="metadata">
-          <source src="http://tgixn1iiv.hn-bkt.clouddn.com/291.mp4" type="video/mp4">
+          <source src="https://hd.knack58.com/a_video/291.mp4" type="video/mp4">
           您的浏览器不支持HTML5视频播放
         </video>
       </div>
@@ -206,8 +206,8 @@
     
     // 视频源
     const videoSources = {
-      video1: 'http://tgixn1iiv.hn-bkt.clouddn.com/291.mp4',
-      video2: 'http://tgixn1iiv.hn-bkt.clouddn.com/292.mp4'
+      video1: 'https://hd.knack58.com/a_video/291.mp4',
+      video2: 'https://hd.knack58.com/a_video/292.mp4'
     };
     
     // 播放/暂停功能
@@ -233,12 +233,16 @@
       updateMuteButton();
     }
     
-    function updateMuteButton() {
-      if (videoPlayer.muted) {
-        muteBtn.innerHTML = '<i class="fa fa-volume-off text-xl"></i>';
-      } else if (videoPlayer.volume === 0) {
-        muteBtn.innerHTML = '<i class="fa fa-volume-down text-xl"></i>';
-             }
+  	function updateMuteButton() {
+	  if (videoPlayer.muted) {
+		muteBtn.innerHTML = '<i class="fa fa-volume-off text-xl"></i>';
+	  } else if (videoPlayer.volume === 0) {
+		muteBtn.innerHTML = '<i class="fa fa-volume-down text-xl"></i>';
+	  } else {
+		muteBtn.innerHTML = '<i class="fa fa-volume-up text-xl"></i>';
+	  }
+	}
+			 
     
     // 更新进度条
     function updateProgress() {
